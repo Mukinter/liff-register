@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียนพนักงาน - สแกนนิ้ว</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; padding: 12px; margin-top: 20px; background: #06C755; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        button:hover { background: #05b34c; }
+        .note { font-size: 12px; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>ลงทะเบียนพนักงาน</h2>
+        <p style="font-size: 13px; color: #666;">กรอกข้อมูลส่วนตัวเพื่อผูกบัญชี LINE สำหรับระบบสแกนนิ้ว</p>
+        
+        <form id="regForm">
+            <label>รหัสพนักงาน:</label>
+            <input type="text" id="empCode" required placeholder="เช่น EMP001">
+            
+            <label>ชื่อ - นามสกุล:</label>
+            <input type="text" id="empName" required placeholder="สมชาย ใจดี">
+
+            <label>อีเมล:</label>
+            <input type="email" id="email" required placeholder="example@company.com">
+
+            <label>เบอร์โทรศัพท์:</label>
+            <input type="tel" id="phone" required placeholder="0812345678">
+
+            <input type="hidden" id="lineUserId">
+            <div class="note" id="statusText">กำลังโหลดข้อมูล LINE...</div>
+
+            <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
+        </form>
+    </div>
+
+    <script>
+        const LIFF_ID = "2012138789-CSrjHxtK";
+        // ⚠️ อย่าลืมแทนที่ข้อความด้านล่างด้วย Web App URL ที่ได้จากการ Deploy Google Apps Script ของคุณ
+        const GOOGLE_SCRIPT_URL = "PUT_YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE";
+
+        async function main() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    const profile = await liff.getProfile();
+                    document.getElementById('lineUserId').value = profile.userId;
+                    document.getElementById('statusText').innerText = "สถานะ: พร้อมลงทะเบียน ✅";
+                    document.getElementById('statusText').style.color = "green";
+                }
+            } catch (error) {
+                console.error("LIFF initialization failed", error);
+                document.getElementById('statusText').innerText = "กรุณาเปิดผ่านแอปพลิเคชัน LINE เท่านั้น";
+                document.getElementById('statusText').style.color = "red";
+            }
+        }
+
+        main();
+
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "กำลังบันทึกข้อมูล...";
+            btn.disabled = true;
+
+            const data = {
+                empCode: document.getElementById('empCode').value,
+                empName: document.getElementById('empName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                lineUserId: document.getElementById('lineUserId').value
+            };
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('ลงทะเบียนสำเร็จเรียบร้อย!');
+                    liff.closeWindow();
+                } else {
+                    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                    btn.innerText = "ยืนยันการลงทะเบียน";
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                alert('ไม่สามารถเชื่อมต่อกับระบบได้');
+                btn.innerText = "ยืนยันการลงทะเบียน";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
