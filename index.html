@@ -234,19 +234,9 @@
         function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
             showLoading("กำลังบันทึกข้อมูล...");
 
-            const payload = {
-                lineId: lineId,
-                empCode: empCode,
-                fullName: fullName,
-                email: email,
-                phone: phone,
-                isOverwrite: isOverwrite
-            };
+            const targetUrl = `${WEB_APP_URL}?action=saveData&lineId=${encodeURIComponent(lineId)}&empCode=${encodeURIComponent(empCode)}&fullName=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&isOverwrite=${isOverwrite}`;
 
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            })
+            fetch(targetUrl)
             .then(response => response.json())
             .then(result => {
                 hideLoading();
