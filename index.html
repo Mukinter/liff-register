@@ -91,6 +91,7 @@
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
 
+            // ส่งข้อมูลแบบ GET Parameter โดยตรง
             const url = `${WEB_APP_URL}?lineId=${encodeURIComponent(lineId)}&empCode=${encodeURIComponent(empCode)}&fullName=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
             fetch(url)
