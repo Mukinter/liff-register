@@ -12,7 +12,7 @@
             background-color: #f4f6f9;
             margin: 0;
             padding: 20px;
-            font-size: 18px; /* ขยายฟอนต์พื้นฐานให้ใหญ่ขึ้น */
+            font-size: 18px;
         }
         .container {
             max-width: 500px;
@@ -44,7 +44,7 @@
             border: 1px solid #ccc;
             border-radius: 8px;
             box-sizing: border-box;
-            font-size: 18px; /* ขยายขนาดช่องกรอก */
+            font-size: 18px;
         }
         button {
             width: 100%;
@@ -53,24 +53,58 @@
             padding: 16px;
             border: none;
             border-radius: 8px;
-            font-size: 20px; /* ขยายปุ่มให้กดง่าย */
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             margin-top: 10px;
         }
-        button:hover {
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
             background-color: #05b34c;
         }
-        #loading {
-            text-align: center;
+
+        /* สไตล์สำหรับ Overlay และสัญลักษณ์โหลด (Spinner) */
+        #loadingOverlay {
             display: none;
-            font-size: 18px;
-            color: #666;
-            margin-top: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #06C755;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
+
+    <!-- หน้าจอโหลด (Spinner Overlay) -->
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">กำลังโหลดข้อมูล...</div>
+    </div>
 
     <div class="container">
         <h2>ลงทะเบียนพนักงาน</h2>
@@ -89,7 +123,7 @@
 
             <div class="form-group">
                 <label for="email">อีเมล:</label>
-                <input type="email5" id="email" name="email" required placeholder="example@email.com">
+                <input type="email" id="email" name="email" required placeholder="example@email.com">
             </div>
 
             <div class="form-group">
@@ -99,7 +133,6 @@
 
             <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
         </form>
-        <div id="loading">กำลังตรวจสอบและบันทึกข้อมูล...</div>
     </div>
 
     <script>
@@ -107,8 +140,18 @@
         const WEB_APP_URL = "YOUR_APPS_SCRIPT_URL"; // ใส่ URL ของ Google Apps Script
 
         window.onload = function() {
+            showLoading("กำลังเชื่อมต่อ LINE...");
             initializeLiff();
         };
+
+        function showLoading(text) {
+            document.getElementById('loadingText').innerText = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
 
         function initializeLiff() {
             liff.init({ liffId: LIFF_ID }).then(() => {
@@ -117,12 +160,17 @@
                 } else {
                     liff.getProfile().then(profile => {
                         document.getElementById('lineId').value = profile.userId;
+                        hideLoading(); // ซ่อนหน้าโหลดเมื่อดึงข้อมูลเสร็จ
                     }).catch(err => {
+                        hideLoading();
                         console.error('Error getting profile: ', err);
+                        alert("ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้ กรุณาลองใหม่อีกครั้ง");
                     });
                 }
             }).catch(err => {
+                hideLoading();
                 console.error('Failed to init LIFF', err);
+                alert("LIFF Initialization failed: " + err);
             });
         }
 
@@ -136,45 +184,38 @@
             const phone = document.getElementById('phone').value;
 
             if (!lineId) {
-                alert("ไม่พบข้อมูล LINE User ID กรุณาเปิดผ่านแอปพลิเคชัน LINE เท่านั้น");
+                alert("ไม่พบข้อมูล LINE User ID กรุณาปิดแล้วเปิดใหม่อีกครั้งผ่านแอปพลิเคชัน LINE");
                 return;
             }
 
-            // ขั้นตอนที่ 1: เช็กว่า Line ID นี้เคยลงทะเบียนหรือยัง
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('submitBtn').disabled = true;
+            // แสดงหน้าโหลดกำลังตรวจสอบ
+            showLoading("กำลังตรวจสอบข้อมูล...");
 
             fetch(WEB_APP_URL + "?action=checkLineId&lineId=" + encodeURIComponent(lineId))
             .then(response => response.json())
             .then(data => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                hideLoading(); // ซ่อนหน้าโหลดเมื่อเช็คเสร็จ
 
                 if (data.isExist) {
-                    // ถ้าเคยลงทะเบียนแล้ว ให้ถามยืนยัน
                     let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
                     if (confirmUpdate) {
-                        // ส่งข้อมูลไปบันทึก (โดยอนุญาตให้บันทึกทับ/เช็ครหัสพนักงานต่อ)
                         submitData(lineId, empCode, fullName, email, phone, true);
                     } else {
-                        // กดยกเลิก ปิดหน้าต่างทันที
                         liff.closeWindow();
                     }
                 } else {
-                    // ถ้ายังไม่เคยลงทะเบียน ส่งข้อมูลไปบันทึกปกติ
                     submitData(lineId, empCode, fullName, email, phone, false);
                 }
             })
             .catch(error => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                hideLoading();
                 alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ: " + error);
             });
         });
 
         function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('submitBtn').disabled = true;
+            // แสดงหน้าโหลดกำลังบันทึก
+            showLoading("กำลังบันทึกข้อมูล...");
 
             const payload = {
                 lineId: lineId,
@@ -191,19 +232,17 @@
             })
             .then(response => response.json())
             .then(result => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                hideLoading(); // ซ่อนหน้าโหลด
 
                 if (result.status === "success") {
                     alert("บันทึกข้อมูลสำเร็จ!");
                     liff.closeWindow();
                 } else {
-                    alert(result.message); // เช่น กรณีรหัสพนักงานซ้ำกับคนอื่น
+                    alert(result.message);
                 }
             })
             .catch(error => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                hideLoading();
                 alert("เกิดข้อผิดพลาด: " + error);
             });
         }
