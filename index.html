@@ -117,11 +117,14 @@
 
             showLoading("กำลังตรวจสอบข้อมูล...");
 
-            // เปลี่ยนมายิง POST แบบฝัง Data เพื่อป้องกันเบราว์เซอร์บล็อก URL Parameter
+            // แปลงข้อมูลเป็น Form Data เพื่อทะลุการบล็อก CORS
+            const formData = new URLSearchParams();
+            formData.append("action", "checkLineId");
+            formData.append("lineId", lineId);
+
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                redirect: 'follow',
-                body: JSON.stringify({ action: 'checkLineId', lineId: lineId })
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
@@ -146,19 +149,18 @@
         function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
             showLoading("กำลังบันทึกข้อมูล...");
 
-            // เปลี่ยนมายิง POST สำหรับบันทึกข้อมูล
+            const formData = new URLSearchParams();
+            formData.append("action", "saveData");
+            formData.append("lineId", lineId);
+            formData.append("empCode", empCode);
+            formData.append("fullName", fullName);
+            formData.append("email", email);
+            formData.append("phone", phone);
+            formData.append("isOverwrite", isOverwrite);
+
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                redirect: 'follow',
-                body: JSON.stringify({
-                    action: 'saveData',
-                    lineId: lineId,
-                    empCode: empCode,
-                    fullName: fullName,
-                    email: email,
-                    phone: phone,
-                    isOverwrite: isOverwrite
-                })
+                body: formData
             })
             .then(response => response.json())
             .then(result => {
