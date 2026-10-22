@@ -3,7 +3,7 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq706P1Cyg/exec"; // URL Google Apps Script
 
         window.onload = function() {
-            showLoading("กำลังเตรียมระบบ...");
+            showLoading("กำลังเปิดระบบลงทะเบียน...");
             initializeLiff();
         };
 
@@ -21,7 +21,7 @@
                 if (!liff.isLoggedIn()) {
                     liff.login();
                 } else {
-                    hideLoading(); // ซ่อนหน้าโหลดเมื่อพร้อมใช้งาน
+                    hideLoading(); // ซ่อนหน้าโหลดเมื่อพร้อม
                 }
             }).catch(err => {
                 hideLoading();
@@ -38,7 +38,7 @@
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
 
-            // ดึง LINE User ID สดๆ ตอนกดส่งเลย เพื่อความชัวร์
+            // ตรวจสอบการล็อกอิน LINE
             if (!liff.isLoggedIn()) {
                 alert("กรุณาล็อกอิน LINE ก่อนใช้งาน");
                 liff.login();
@@ -47,45 +47,62 @@
 
             showLoading("กำลังดึงข้อมูล LINE...");
 
-            liff.getProfile().then(profile => {
-                const lineId = profile.userId;
-                
-                if (!lineId) {
-                    hideLoading();
-                    alert("ไม่พบข้อมูล LINE User ID กรุณาปิดแล้วเปิดใหม่อีกครั้งผ่านแอปพลิเคชัน LINE");
-                    return;
+            // วิธีที่ชัวร์ที่สุด: ใช้ Context หรือ ID Token แทนการเรียก getProfile เพียวๆ
+            let lineId = "";
+            try {
+                // ดึงจาก ID Token (ปลอดภัยและติดมากับ LIFF เสมอเมื่อเปิดใน LINE)
+                const decodedToken = liff.getDecodedIDToken();
+                if (decodedToken && decodedToken.sub) {
+                    lineId = decodedToken.sub;
                 }
+            } catch (err) {
+                console.log("Cannot get from token, trying profile...");
+            }
 
-                // เริ่มเช็ก Line ID ใน Google Sheets
-                showLoading("กำลังตรวจสอบข้อมูล...");
-
-                fetch(WEB_APP_URL + "?action=checkLineId&lineId=" + encodeURIComponent(lineId))
-                .then(response => response.json())
-                .then(data => {
+            // ถ้าดึงจาก token ไม่ได้ ให้ดึงจาก getProfile อีกรอบ
+            if (!lineId) {
+                liff.getProfile().then(profile => {
+                    lineId = profile.userId;
+                    processRegistration(lineId, empCode, fullName, email, phone);
+                }).catch(err => {
                     hideLoading();
-
-                    if (data.isExist) {
-                        let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
-                        if (confirmUpdate) {
-                            submitData(lineId, empCode, fullName, email, phone, true);
-                        } else {
-                            liff.closeWindow();
-                        }
-                    } else {
-                        submitData(lineId, empCode, fullName, email, phone, false);
-                    }
-                })
-                .catch(error => {
-                    hideLoading();
-                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ: " + error);
+                    alert("ไม่สามารถดึงข้อมูล LINE User ID ได้ กรุณาปิดแล้วเปิดใหม่อีกครั้งผ่านแอป LINE");
                 });
-
-            }).catch(err => {
-                hideLoading();
-                console.error('Error getting profile: ', err);
-                alert("ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้ กรุณาลองใหม่อีกครั้ง");
-            });
+            } else {
+                processRegistration(lineId, empCode, fullName, email, phone);
+            }
         });
+
+        function processRegistration(lineId, empCode, fullName, email, phone) {
+            if (!lineId) {
+                hideLoading();
+                alert("ไม่พบข้อมูล LINE User ID กรุณาเปิดผ่านแอปพลิเคชัน LINE เท่านั้น");
+                return;
+            }
+
+            showLoading("กำลังตรวจสอบข้อมูล...");
+
+            fetch(WEB_APP_URL + "?action=checkLineId&lineId=" + encodeURIComponent(lineId))
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+
+                if (data.isExist) {
+                    let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
+                    if (confirmUpdate) {
+                        submitData(lineId, empCode, fullName, email, phone, true);
+                    } else {
+                        liff.closeWindow();
+                    }
+                } else {
+                    submitData(lineId, empCode, fullName, email, phone, false);
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ: " + error);
+            });
+        }
 
         function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
             showLoading("กำลังบันทึกข้อมูล...");
