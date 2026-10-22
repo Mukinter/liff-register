@@ -11,8 +11,7 @@
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
         input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { width: 100%; padding: 12px; margin-top: 20px; background: #06C755; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        button:hover:not(:disabled) { background: #05b34c; }
-        button:disabled { background: #cccccc; cursor: not-allowed; }
+        button:hover { background: #05b34c; }
         .note { font-size: 12px; color: #666; margin-top: 5px; }
     </style>
 </head>
@@ -43,8 +42,8 @@
 
     <script>
         const LIFF_ID = "2012138789-CSrjHxtK";
-        // แก้ไขลิงก์ให้ถูกต้อง (เปลี่ยนจาก O เป็นเลข 0)
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq706P1Cyg/exec";
+        // แก้ไข URL กลับมาใช้ตัว O พิมพ์ใหญ่ให้ตรงกับ Web App เดิมแล้วครับ
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq7O6P1Cyg/exec";
 
         async function main() {
             try {
@@ -98,7 +97,8 @@
                     btn.disabled = false;
                 }
             } catch (err) {
-                alert('ไม่สามารถเชื่อมต่อกับระบบได้');
+                // เพิ่มการแสดงรายละเอียด Error เพื่อให้รู้ว่าพังที่จุดไหนถ้าเกิดซ้ำ
+                alert('ไม่สามารถเชื่อมต่อกับระบบได้: ' + err.message);
                 btn.innerText = "ยืนยันการลงทะเบียน";
                 btn.disabled = false;
             }
