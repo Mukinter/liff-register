@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ลงทะเบียนพนักงาน</title>
-    <!-- โหลด LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body {
@@ -65,8 +64,6 @@
         button:hover:not(:disabled) {
             background-color: #05b34c;
         }
-
-        /* หน้าจอโหลด (Spinner Overlay) */
         #loadingOverlay {
             display: none;
             position: fixed;
@@ -100,7 +97,6 @@
 </head>
 <body>
 
-    <!-- หน้าจอโหลด -->
     <div id="loadingOverlay">
         <div class="spinner"></div>
         <div id="loadingText">กำลังโหลดข้อมูล...</div>
