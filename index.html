@@ -13,40 +13,37 @@
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 18px; }
         input { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; }
         button { width: 100%; background-color: #06C755; color: white; padding: 16px; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        button:hover:not(:disabled) { background-color: #05b34c; }
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 20px; font-weight: bold; }
         .spinner { width: 50px; height: 50px; border: 6px solid #f3f3f3; border-top: 6px solid #06C755; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
     <div id="loadingOverlay">
         <div class="spinner"></div>
-        <div id="loadingText">กำลังโหลดข้อมูล...</div>
+        <div id="loadingText">กำลังบันทึกข้อมูล...</div>
     </div>
 
     <div class="container">
         <h2>ลงทะเบียนพนักงาน</h2>
         <form id="regisForm">
             <div class="form-group">
-                <label for="empCode">รหัสพนักงาน:</label>
-                <input type="text" id="empCode" name="empCode" required placeholder="กรอกรหัสพนักงาน">
+                <label>รหัสพนักงาน:</label>
+                <input type="text" id="empCode" required>
             </div>
             <div class="form-group">
-                <label for="fullName">ชื่อ-นามสกุล:</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="กรอกชื่อและนามสกุล">
+                <label>ชื่อ-นามสกุล:</label>
+                <input type="text" id="fullName" required>
             </div>
             <div class="form-group">
-                <label for="email">อีเมล:</label>
-                <input type="email" id="email" name="email" required placeholder="example@email.com">
+                <label>อีเมล:</label>
+                <input type="email" id="email" required>
             </div>
             <div class="form-group">
-                <label for="phone">เบอร์โทรศัพท์:</label>
-                <input type="tel" id="phone" name="phone" required placeholder="0812345678">
+                <label>เบอร์โทรศัพท์:</label>
+                <input type="tel" id="phone" required>
             </div>
-            <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
+            <button type="submit">ยืนยันการลงทะเบียน</button>
         </form>
     </div>
 
@@ -55,126 +52,61 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq706P1Cyg/exec";
 
         window.onload = function() {
-            showLoading("กำลังเตรียมระบบ...");
             liff.init({ liffId: LIFF_ID }).then(() => {
-                if (!liff.isLoggedIn()) { liff.login(); } 
-                else { hideLoading(); }
-            }).catch(err => {
-                hideLoading();
-                alert("LIFF Init failed: " + err);
+                if (!liff.isLoggedIn()) { liff.login(); }
             });
         };
-
-        function showLoading(text) {
-            document.getElementById('loadingText').innerText = text;
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
 
         document.getElementById('regisForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            let lineId = "";
+            try {
+                const token = liff.getDecodedIDToken();
+                if (token && token.sub) lineId = token.sub;
+            } catch (err) {}
+
+            if (!lineId) {
+                liff.getProfile().then(profile => {
+                    submitData(profile.userId);
+                }).catch(err => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    alert("ไม่สามารถดึงข้อมูล LINE ได้");
+                });
+            } else {
+                submitData(lineId);
+            }
+        });
+
+        function submitData(lineId) {
             const empCode = document.getElementById('empCode').value;
             const fullName = document.getElementById('fullName').value;
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
 
-            if (!liff.isLoggedIn()) {
-                alert("กรุณาล็อกอิน LINE ก่อนใช้งาน");
-                liff.login();
-                return;
-            }
+            const url = `${WEB_APP_URL}?lineId=${encodeURIComponent(lineId)}&empCode=${encodeURIComponent(empCode)}&fullName=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
-            showLoading("กำลังดึงข้อมูล LINE...");
-
-            let lineId = "";
-            try {
-                const decodedToken = liff.getDecodedIDToken();
-                if (decodedToken && decodedToken.sub) { lineId = decodedToken.sub; }
-            } catch (err) {}
-
-            if (!lineId) {
-                liff.getProfile().then(profile => {
-                    processRegistration(profile.userId, empCode, fullName, email, phone);
-                }).catch(err => {
-                    hideLoading();
-                    alert("ไม่สามารถดึงข้อมูล LINE ได้ กรุณาเปิดผ่านแอป LINE");
-                });
-            } else {
-                processRegistration(lineId, empCode, fullName, email, phone);
-            }
-        });
-
-        function processRegistration(lineId, empCode, fullName, email, phone) {
-            if (!lineId) {
-                hideLoading();
-                alert("ไม่พบข้อมูล LINE User ID");
-                return;
-            }
-
-            showLoading("กำลังตรวจสอบข้อมูล...");
-
-            // แปลงข้อมูลเป็น Form Data เพื่อทะลุการบล็อก CORS
-            const formData = new URLSearchParams();
-            formData.append("action", "checkLineId");
-            formData.append("lineId", lineId);
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: formData
-            })
+            fetch(url)
             .then(response => response.json())
             .then(data => {
-                hideLoading();
-                if (data.isExist) {
-                    let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
-                    if (confirmUpdate) {
-                        submitData(lineId, empCode, fullName, email, phone, true);
-                    } else {
-                        liff.closeWindow();
-                    }
-                } else {
-                    submitData(lineId, empCode, fullName, email, phone, false);
-                }
-            })
-            .catch(error => {
-                hideLoading();
-                alert("เกิดข้อผิดพลาดในการตรวจสอบ: " + error.message);
-            });
-        }
-
-        function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
-            showLoading("กำลังบันทึกข้อมูล...");
-
-            const formData = new URLSearchParams();
-            formData.append("action", "saveData");
-            formData.append("lineId", lineId);
-            formData.append("empCode", empCode);
-            formData.append("fullName", fullName);
-            formData.append("email", email);
-            formData.append("phone", phone);
-            formData.append("isOverwrite", isOverwrite);
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                hideLoading();
-                if (result.status === "success") {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                if (data.status === "success") {
                     alert("บันทึกข้อมูลสำเร็จ!");
                     liff.closeWindow();
                 } else {
-                    alert(result.message);
+                    alert("เกิดข้อผิดพลาด: " + data.message);
                 }
             })
             .catch(error => {
-                hideLoading();
-                alert("เกิดข้อผิดพลาดในการบันทึก: " + error.message);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert("เชื่อมต่อล้มเหลว: " + error.message);
             });
         }
     </script>
