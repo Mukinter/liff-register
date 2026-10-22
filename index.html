@@ -6,93 +6,18 @@
     <title>ลงทะเบียนพนักงาน</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-            font-size: 18px;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-            color: #06C755;
-            font-size: 26px;
-            margin-bottom: 25px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-            font-size: 18px;
-        }
-        input {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 18px;
-        }
-        button {
-            width: 100%;
-            background-color: #06C755;
-            color: white;
-            padding: 16px;
-            border: none;
-            border-radius: 8px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        button:hover:not(:disabled) {
-            background-color: #05b34c;
-        }
-        #loadingOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #06C755;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; font-size: 18px; }
+        .container { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #06C755; font-size: 26px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 18px; }
+        input { width: 100%; padding: 14px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 18px; }
+        button { width: 100%; background-color: #06C755; color: white; padding: 16px; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        button:hover:not(:disabled) { background-color: #05b34c; }
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white; font-size: 20px; font-weight: bold; }
+        .spinner { width: 50px; height: 50px; border: 6px solid #f3f3f3; border-top: 6px solid #06C755; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -109,22 +34,18 @@
                 <label for="empCode">รหัสพนักงาน:</label>
                 <input type="text" id="empCode" name="empCode" required placeholder="กรอกรหัสพนักงาน">
             </div>
-
             <div class="form-group">
                 <label for="fullName">ชื่อ-นามสกุล:</label>
                 <input type="text" id="fullName" name="fullName" required placeholder="กรอกชื่อและนามสกุล">
             </div>
-
             <div class="form-group">
                 <label for="email">อีเมล:</label>
                 <input type="email" id="email" name="email" required placeholder="example@email.com">
             </div>
-
             <div class="form-group">
                 <label for="phone">เบอร์โทรศัพท์:</label>
                 <input type="tel" id="phone" name="phone" required placeholder="0812345678">
             </div>
-
             <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
         </form>
     </div>
@@ -135,7 +56,13 @@
 
         window.onload = function() {
             showLoading("กำลังเตรียมระบบ...");
-            initializeLiff();
+            liff.init({ liffId: LIFF_ID }).then(() => {
+                if (!liff.isLoggedIn()) { liff.login(); } 
+                else { hideLoading(); }
+            }).catch(err => {
+                hideLoading();
+                alert("LIFF Init failed: " + err);
+            });
         };
 
         function showLoading(text) {
@@ -145,20 +72,6 @@
 
         function hideLoading() {
             document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
-        function initializeLiff() {
-            liff.init({ liffId: LIFF_ID }).then(() => {
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                } else {
-                    hideLoading();
-                }
-            }).catch(err => {
-                hideLoading();
-                console.error('Failed to init LIFF', err);
-                alert("LIFF Initialization failed: " + err);
-            });
         }
 
         document.getElementById('regisForm').addEventListener('submit', function(e) {
@@ -180,20 +93,15 @@
             let lineId = "";
             try {
                 const decodedToken = liff.getDecodedIDToken();
-                if (decodedToken && decodedToken.sub) {
-                    lineId = decodedToken.sub;
-                }
-            } catch (err) {
-                console.log("Cannot get from token");
-            }
+                if (decodedToken && decodedToken.sub) { lineId = decodedToken.sub; }
+            } catch (err) {}
 
             if (!lineId) {
                 liff.getProfile().then(profile => {
-                    lineId = profile.userId;
-                    processRegistration(lineId, empCode, fullName, email, phone);
+                    processRegistration(profile.userId, empCode, fullName, email, phone);
                 }).catch(err => {
                     hideLoading();
-                    alert("ไม่สามารถดึงข้อมูล LINE User ID ได้ กรุณาเปิดผ่านแอป LINE เท่านั้น");
+                    alert("ไม่สามารถดึงข้อมูล LINE ได้ กรุณาเปิดผ่านแอป LINE");
                 });
             } else {
                 processRegistration(lineId, empCode, fullName, email, phone);
@@ -209,11 +117,15 @@
 
             showLoading("กำลังตรวจสอบข้อมูล...");
 
-            fetch(WEB_APP_URL + "?action=checkLineId&lineId=" + encodeURIComponent(lineId))
+            // เปลี่ยนมายิง POST แบบฝัง Data เพื่อป้องกันเบราว์เซอร์บล็อก URL Parameter
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                body: JSON.stringify({ action: 'checkLineId', lineId: lineId })
+            })
             .then(response => response.json())
             .then(data => {
                 hideLoading();
-
                 if (data.isExist) {
                     let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
                     if (confirmUpdate) {
@@ -227,20 +139,30 @@
             })
             .catch(error => {
                 hideLoading();
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error);
+                alert("เกิดข้อผิดพลาดในการตรวจสอบ: " + error.message);
             });
         }
 
         function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
             showLoading("กำลังบันทึกข้อมูล...");
 
-            const targetUrl = `${WEB_APP_URL}?action=saveData&lineId=${encodeURIComponent(lineId)}&empCode=${encodeURIComponent(empCode)}&fullName=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&isOverwrite=${isOverwrite}`;
-
-            fetch(targetUrl)
+            // เปลี่ยนมายิง POST สำหรับบันทึกข้อมูล
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                body: JSON.stringify({
+                    action: 'saveData',
+                    lineId: lineId,
+                    empCode: empCode,
+                    fullName: fullName,
+                    email: email,
+                    phone: phone,
+                    isOverwrite: isOverwrite
+                })
+            })
             .then(response => response.json())
             .then(result => {
                 hideLoading();
-
                 if (result.status === "success") {
                     alert("บันทึกข้อมูลสำเร็จ!");
                     liff.closeWindow();
@@ -250,7 +172,7 @@
             })
             .catch(error => {
                 hideLoading();
-                alert("เกิดข้อผิดพลาด: " + error);
+                alert("เกิดข้อผิดพลาดในการบันทึก: " + error.message);
             });
         }
     </script>
