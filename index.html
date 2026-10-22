@@ -11,13 +11,16 @@
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
         input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { width: 100%; padding: 12px; margin-top: 20px; background: #06C755; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        button:hover { background: #05b34c; }
+        button:hover:not(:disabled) { background: #05b34c; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
         .note { font-size: 12px; color: #666; margin-top: 5px; }
+        .version { text-align: center; color: #999; font-size: 12px; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>ลงทะเบียนพนักงาน</h2>
+        <!-- เพิ่มเลขเวอร์ชันให้เห็นชัดๆ -->
+        <h2>ลงทะเบียนพนักงาน <span style="font-size: 12px; color: #06C755;">(v2.0)</span></h2>
         <p style="font-size: 13px; color: #666;">กรอกข้อมูลส่วนตัวเพื่อผูกบัญชี LINE สำหรับระบบสแกนนิ้ว</p>
         
         <form id="regForm">
@@ -36,13 +39,16 @@
             <input type="hidden" id="lineUserId">
             <div class="note" id="statusText">กำลังโหลดข้อมูล LINE...</div>
 
-            <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
+            <button type="submit" id="submitBtn" disabled>ยืนยันการลงทะเบียน</button>
         </form>
+        <div class="version">Frontend Version: 2.0 (เช็คซ้ำ + บันทึก)</div>
     </div>
 
     <script>
         const LIFF_ID = "2012138789-CSrjHxtK";
-        // แทนที่ด้วย Web App URL ล่าสุดจาก Google Apps Script ของคุณ
+        // ==============================================================
+        // ⚠️ อย่าลืมแก้ลิงก์ด้านล่างให้เป็น URL ล่าสุดของ Apps Script V2.0 ของคุณนะครับ
+        // ==============================================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdM5YE_UFGIhVQWmKxLJPlq38iTI35iAC9c6fW31Ynq706P1Cyg/exec";
 
         async function main() {
@@ -55,6 +61,7 @@
                     document.getElementById('lineUserId').value = profile.userId;
                     document.getElementById('statusText').innerText = "สถานะ: พร้อมลงทะเบียน ✅";
                     document.getElementById('statusText').style.color = "green";
+                    document.getElementById('submitBtn').disabled = false;
                 }
             } catch (error) {
                 console.error("LIFF initialization failed", error);
@@ -69,35 +76,70 @@
             e.preventDefault();
             
             const btn = document.getElementById('submitBtn');
-            btn.innerText = "กำลังบันทึกข้อมูล...";
+            btn.innerText = "กำลังตรวจสอบข้อมูล...";
             btn.disabled = true;
 
-            const data = {
-                empCode: document.getElementById('empCode').value,
-                empName: document.getElementById('empName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                lineUserId: document.getElementById('lineUserId').value
-            };
+            const lineUserId = document.getElementById('lineUserId').value;
+            const empCode = document.getElementById('empCode').value;
+            const empName = document.getElementById('empName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                // สเตปที่ 1: ตรวจสอบข้อมูลว่าเคยมี LINE ID นี้ไหม
+                const checkResponse = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({ action: "check", lineUserId: lineId })
                 });
                 
-                const result = await response.json();
-                if (result.success) {
+                const checkResult = await checkResponse.json();
+                
+                let isOverwrite = false;
+                
+                // ถ้ามีข้อมูลอยู่แล้ว ให้เด้งถามผู้ใช้งาน
+                if (checkResult.isExist) {
+                    const confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้ว ข้อมูลเดิมจะถูกเขียนทับ\nคุณต้องการแก้ไขข้อมูลหรือไม่?");
+                    if (!confirmUpdate) {
+                        btn.innerText = "ยืนยันการลงทะเบียน";
+                        btn.disabled = false;
+                        return; // ยกเลิกการบันทึก
+                    }
+                    isOverwrite = true;
+                }
+
+                // สเตปที่ 2: ดำเนินการบันทึกข้อมูล (หรือเขียนทับ)
+                btn.innerText = "กำลังบันทึกข้อมูล...";
+                
+                const savePayload = {
+                    action: "save",
+                    isOverwrite: isOverwrite,
+                    empCode: empCode,
+                    empName: empName,
+                    email: email,
+                    phone: phone,
+                    lineUserId: lineUserId
+                };
+
+                const saveResponse = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(savePayload)
+                });
+                
+                const saveResult = await saveResponse.json();
+                
+                if (saveResult.success) {
                     alert('ลงทะเบียนสำเร็จเรียบร้อย!');
                     liff.closeWindow();
                 } else {
-                    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                    alert('เกิดข้อผิดพลาด: ' + (saveResult.message || "ไม่สามารถบันทึกได้"));
                     btn.innerText = "ยืนยันการลงทะเบียน";
                     btn.disabled = false;
                 }
+                
             } catch (err) {
-                alert('ไม่สามารถเชื่อมต่อกับระบบได้');
+                alert('ไม่สามารถเชื่อมต่อกับระบบได้: ' + err.message);
                 btn.innerText = "ยืนยันการลงทะเบียน";
                 btn.disabled = false;
             }
