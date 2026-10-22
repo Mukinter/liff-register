@@ -1,146 +1,9 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ลงทะเบียนพนักงาน</title>
-    <!-- โหลด LIFF SDK -->
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-            font-size: 18px;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-            color: #06C755;
-            font-size: 26px;
-            margin-bottom: 25px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-            font-size: 18px;
-        }
-        input {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 18px;
-        }
-        button {
-            width: 100%;
-            background-color: #06C755;
-            color: white;
-            padding: 16px;
-            border: none;
-            border-radius: 8px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        button:hover:not(:disabled) {
-            background-color: #05b34c;
-        }
-
-        /* สไตล์สำหรับ Overlay และสัญลักษณ์โหลด (Spinner) */
-        #loadingOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #06C755;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- หน้าจอโหลด (Spinner Overlay) -->
-    <div id="loadingOverlay">
-        <div class="spinner"></div>
-        <div id="loadingText">กำลังโหลดข้อมูล...</div>
-    </div>
-
-    <div class="container">
-        <h2>ลงทะเบียนพนักงาน</h2>
-        <form id="regisForm">
-            <input type="hidden" id="lineId" name="lineId">
-            
-            <div class="form-group">
-                <label for="empCode">รหัสพนักงาน:</label>
-                <input type="text" id="empCode" name="empCode" required placeholder="กรอกรหัสพนักงาน">
-            </div>
-
-            <div class="form-group">
-                <label for="fullName">ชื่อ-นามสกุล:</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="กรอกชื่อและนามสกุล">
-            </div>
-
-            <div class="form-group">
-                <label for="email">อีเมล:</label>
-                <input type="email" id="email" name="email" required placeholder="example@email.com">
-            </div>
-
-            <div class="form-group">
-                <label for="phone">เบอร์โทรศัพท์:</label>
-                <input type="tel" id="phone" name="phone" required placeholder="0812345678">
-            </div>
-
-            <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
-        </form>
-    </div>
-
-    <script>
-        const LIFF_ID = "2012138789-CSrjHxtK"; // ใส่ LIFF ID ของคุณ
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq7O6P1Cyg/exec"; // ใส่ URL ของ Google Apps Script
+<script>
+        const LIFF_ID = "2012138789-CSrjHxtK"; // LIFF ID ของคุณ
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq706P1Cyg/exec"; // URL Google Apps Script
 
         window.onload = function() {
-            showLoading("กำลังเชื่อมต่อ LINE...");
+            showLoading("กำลังเตรียมระบบ...");
             initializeLiff();
         };
 
@@ -158,14 +21,7 @@
                 if (!liff.isLoggedIn()) {
                     liff.login();
                 } else {
-                    liff.getProfile().then(profile => {
-                        document.getElementById('lineId').value = profile.userId;
-                        hideLoading(); // ซ่อนหน้าโหลดเมื่อดึงข้อมูลเสร็จ
-                    }).catch(err => {
-                        hideLoading();
-                        console.error('Error getting profile: ', err);
-                        alert("ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้ กรุณาลองใหม่อีกครั้ง");
-                    });
+                    hideLoading(); // ซ่อนหน้าโหลดเมื่อพร้อมใช้งาน
                 }
             }).catch(err => {
                 hideLoading();
@@ -177,44 +33,61 @@
         document.getElementById('regisForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const lineId = document.getElementById('lineId').value;
             const empCode = document.getElementById('empCode').value;
             const fullName = document.getElementById('fullName').value;
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
 
-            if (!lineId) {
-                alert("ไม่พบข้อมูล LINE User ID กรุณาปิดแล้วเปิดใหม่อีกครั้งผ่านแอปพลิเคชัน LINE");
+            // ดึง LINE User ID สดๆ ตอนกดส่งเลย เพื่อความชัวร์
+            if (!liff.isLoggedIn()) {
+                alert("กรุณาล็อกอิน LINE ก่อนใช้งาน");
+                liff.login();
                 return;
             }
 
-            // แสดงหน้าโหลดกำลังตรวจสอบ
-            showLoading("กำลังตรวจสอบข้อมูล...");
+            showLoading("กำลังดึงข้อมูล LINE...");
 
-            fetch(WEB_APP_URL + "?action=checkLineId&lineId=" + encodeURIComponent(lineId))
-            .then(response => response.json())
-            .then(data => {
-                hideLoading(); // ซ่อนหน้าโหลดเมื่อเช็คเสร็จ
-
-                if (data.isExist) {
-                    let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
-                    if (confirmUpdate) {
-                        submitData(lineId, empCode, fullName, email, phone, true);
-                    } else {
-                        liff.closeWindow();
-                    }
-                } else {
-                    submitData(lineId, empCode, fullName, email, phone, false);
+            liff.getProfile().then(profile => {
+                const lineId = profile.userId;
+                
+                if (!lineId) {
+                    hideLoading();
+                    alert("ไม่พบข้อมูล LINE User ID กรุณาปิดแล้วเปิดใหม่อีกครั้งผ่านแอปพลิเคชัน LINE");
+                    return;
                 }
-            })
-            .catch(error => {
+
+                // เริ่มเช็ก Line ID ใน Google Sheets
+                showLoading("กำลังตรวจสอบข้อมูล...");
+
+                fetch(WEB_APP_URL + "?action=checkLineId&lineId=" + encodeURIComponent(lineId))
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+
+                    if (data.isExist) {
+                        let confirmUpdate = confirm("ไลน์นี้เคยลงทะเบียนแล้วข้อมูลเก่าจะหายไป คุณต้องการแก้ไขข้อมูลหรือไม่");
+                        if (confirmUpdate) {
+                            submitData(lineId, empCode, fullName, email, phone, true);
+                        } else {
+                            liff.closeWindow();
+                        }
+                    } else {
+                        submitData(lineId, empCode, fullName, email, phone, false);
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ: " + error);
+                });
+
+            }).catch(err => {
                 hideLoading();
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ: " + error);
+                console.error('Error getting profile: ', err);
+                alert("ไม่สามารถดึงข้อมูลโปรไฟล์ LINE ได้ กรุณาลองใหม่อีกครั้ง");
             });
         });
 
         function submitData(lineId, empCode, fullName, email, phone, isOverwrite) {
-            // แสดงหน้าโหลดกำลังบันทึก
             showLoading("กำลังบันทึกข้อมูล...");
 
             const payload = {
@@ -232,7 +105,7 @@
             })
             .then(response => response.json())
             .then(result => {
-                hideLoading(); // ซ่อนหน้าโหลด
+                hideLoading();
 
                 if (result.status === "success") {
                     alert("บันทึกข้อมูลสำเร็จ!");
@@ -247,5 +120,3 @@
             });
         }
     </script>
-</body>
-</html>
