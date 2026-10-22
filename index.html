@@ -6,19 +6,34 @@
     <title>ลงทะเบียนพนักงาน - สแกนนิ้ว</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
-        .container { max-width: 400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
-        input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 12px; margin-top: 20px; background: #06C755; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        button:hover { background: #05b34c; }
-        .note { font-size: 12px; color: #666; margin-top: 5px; }
+        /* ขยายฟอนต์รวม */
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; color: #333; font-size: 16px; }
+        .container { max-width: 450px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* ขยายหัวข้อและเวอร์ชัน */
+        h2 { text-align: center; margin-bottom: 5px; font-size: 26px; }
+        .version-tag { font-size: 18px; color: #06C755; font-weight: bold; }
+        .sub-desc { font-size: 15px; color: #666; text-align: center; margin-bottom: 20px; }
+        
+        /* ขยายป้ายกำกับช่องกรอกข้อมูล */
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 18px; }
+        
+        /* ขยายช่องกรอกข้อมูล */
+        input { width: 100%; padding: 12px; margin-top: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 18px; }
+        
+        /* ขยายปุ่มกด */
+        button { width: 100%; padding: 15px; margin-top: 25px; background: #06C755; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 20px; cursor: pointer; transition: 0.3s; }
+        button:hover:not(:disabled) { background: #05b34c; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        
+        /* ขยายสถานะ */
+        .note { font-size: 15px; color: #666; margin-top: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>ลงทะเบียนพนักงาน</h2>
-        <p style="font-size: 13px; color: #666;">กรอกข้อมูลส่วนตัวเพื่อผูกบัญชี LINE สำหรับระบบสแกนนิ้ว</p>
+        <h2>ลงทะเบียนพนักงาน <span class="version-tag">(v3.1)</span></h2>
+        <p class="sub-desc">กรอกข้อมูลส่วนตัวเพื่อผูกบัญชี LINE สำหรับระบบสแกนนิ้ว</p>
         
         <form id="regForm">
             <label>รหัสพนักงาน:</label>
@@ -36,15 +51,14 @@
             <input type="hidden" id="lineUserId">
             <div class="note" id="statusText">กำลังโหลดข้อมูล LINE...</div>
 
-            <button type="submit" id="submitBtn">ยืนยันการลงทะเบียน</button>
+            <button type="submit" id="submitBtn" disabled>ยืนยันการลงทะเบียน</button>
         </form>
     </div>
 
     <script>
         const LIFF_ID = "2012138789-CSrjHxtK";
-        // แก้ไข URL กลับมาใช้ตัว O พิมพ์ใหญ่ให้ตรงกับ Web App เดิมแล้วครับ
-        // const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq7O6P1Cyg/exec";
-           const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq7O6P1Cyg/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7h8L1zscYjxwHnrdzM5YE_UFGIhVQwRmkxLJPLq38iTI35iAC9c6fW31YNq7O6P1Cyg/exec";
+
         async function main() {
             try {
                 await liff.init({ liffId: LIFF_ID });
@@ -55,6 +69,7 @@
                     document.getElementById('lineUserId').value = profile.userId;
                     document.getElementById('statusText').innerText = "สถานะ: พร้อมลงทะเบียน ✅";
                     document.getElementById('statusText').style.color = "green";
+                    document.getElementById('submitBtn').disabled = false;
                 }
             } catch (error) {
                 console.error("LIFF initialization failed", error);
@@ -69,35 +84,67 @@
             e.preventDefault();
             
             const btn = document.getElementById('submitBtn');
-            btn.innerText = "กำลังบันทึกข้อมูล...";
+            btn.innerText = "กำลังตรวจสอบข้อมูล...";
             btn.disabled = true;
 
-            const data = {
-                empCode: document.getElementById('empCode').value,
-                empName: document.getElementById('empName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                lineUserId: document.getElementById('lineUserId').value
-            };
+            const lineUserId = document.getElementById('lineUserId').value;
+            const empCode = document.getElementById('empCode').value;
+            const empName = document.getElementById('empName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
 
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                // จังหวะที่ 1: เช็คข้อมูลซ้ำ 
+                const checkResponse = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({ action: "check", lineUserId: lineUserId })
                 });
                 
-                const result = await response.json();
-                if (result.success) {
+                const checkResult = await checkResponse.json();
+                let isOverwrite = false;
+                
+                // ถ้าพบข้อมูลเดิม ให้เด้งกล่องข้อความถาม
+                if (checkResult.isExist) {
+                    const confirmUpdate = confirm("บัญชี LINE นี้เคยลงทะเบียนแล้ว ข้อมูลเดิมจะถูกเขียนทับ\nคุณต้องการแก้ไขข้อมูลหรือไม่?");
+                    if (!confirmUpdate) {
+                        btn.innerText = "ยืนยันการลงทะเบียน";
+                        btn.disabled = false;
+                        return; // ยกเลิกการอัปเดต
+                    }
+                    isOverwrite = true;
+                }
+
+                // จังหวะที่ 2: บันทึก/อัปเดตข้อมูล
+                btn.innerText = "กำลังบันทึกข้อมูล...";
+                const savePayload = {
+                    action: "save",
+                    isOverwrite: isOverwrite,
+                    empCode: empCode,
+                    empName: empName,
+                    email: email,
+                    phone: phone,
+                    lineUserId: lineUserId
+                };
+
+                const saveResponse = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(savePayload)
+                });
+                
+                const saveResult = await saveResponse.json();
+                
+                if (saveResult.success) {
                     alert('ลงทะเบียนสำเร็จเรียบร้อย!');
                     liff.closeWindow();
                 } else {
-                    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+                    alert('เกิดข้อผิดพลาด: ' + (saveResult.message || "ไม่สามารถบันทึกได้"));
                     btn.innerText = "ยืนยันการลงทะเบียน";
                     btn.disabled = false;
                 }
+                
             } catch (err) {
-                // เพิ่มการแสดงรายละเอียด Error เพื่อให้รู้ว่าพังที่จุดไหนถ้าเกิดซ้ำ
                 alert('ไม่สามารถเชื่อมต่อกับระบบได้: ' + err.message);
                 btn.innerText = "ยืนยันการลงทะเบียน";
                 btn.disabled = false;
